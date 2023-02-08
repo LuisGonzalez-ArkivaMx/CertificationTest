@@ -44,6 +44,11 @@ namespace CertificationTest
         [MFPropertyDef]
         [JsonConfEditor(HelpText = "Supplier Property Definition", Label = "Supplier Property", IsRequired = true)]
         public MFIdentifier PDSupplier { get; set; }
+
+        //[DataMember]
+        //[MFPropertyDef]
+        //[JsonConfEditor(HelpText = "Contract Title Property Definition", Label = "Contract Title Property", IsRequired = true)]
+        //public MFIdentifier PDContractTitle { get; set; }
     }
 
     [DataContract]

@@ -17,13 +17,14 @@ namespace CertificationTest
     public class VaultApplication
         : ConfigurableVaultApplicationBase<Configuration>
     {
-        [EventHandler(MFEventHandlerType.MFEventHandlerBeforeCheckInChanges, Class = "MF.CL.DeliveryAgreement")]
-        [EventHandler(MFEventHandlerType.MFEventHandlerBeforeCheckInChanges, Class = "MF.CL.SupplierAgreement")]
-        public void ConvertingVBScriptToAVaultApplication(EventHandlerEnvironment env)
+        //[EventHandler(MFEventHandlerType.MFEventHandlerBeforeCheckInChanges, Class = "MF.CL.DeliveryAgreement")]
+        //[EventHandler(MFEventHandlerType.MFEventHandlerBeforeCheckInChanges, Class = "MF.CL.SupplierAgreement")]
+        [PropertyCustomValue("MF.PD.ContractTitle")]
+        public TypedValue ConvertingVBScriptToAVaultApplication(PropertyEnvironment env)
         {
             // Initialize variables and M-Files objects
             var oTypedValue = new TypedValue();
-            var oPropVals = new PropertyValues();
+            var oPropertyValues = new PropertyValues();
             var documentTitle = "";
 
             // If the app is enabled, continue
@@ -32,22 +33,22 @@ namespace CertificationTest
                 try
                 {
                     // Access to the values of the object's properties
-                    oPropVals = env.Vault.ObjectPropertyOperations.GetProperties(env.ObjVer);
+                    oPropertyValues = env.Vault.ObjectPropertyOperations.GetProperties(env.ObjVer);
 
                     // Get the class name of the object valued
-                    var className = oPropVals.SearchForProperty(100).TypedValue.DisplayValue;
+                    var className = oPropertyValues.SearchForProperty(100).TypedValue.DisplayValue;
 
                     // Get the subject property value
-                    var subject = oPropVals
+                    var subject = oPropertyValues
                         .SearchForProperty(Configuration.ConvertingVBScriptToAVaultApplication.PDSubject)
                         .TypedValue
                         .DisplayValue;                    
 
                     // If the class valued is Delivery Agreement
-                    if (Convert.ToInt32(oPropVals.SearchForProperty(100).TypedValue.GetValueAsLookup().DisplayID) == 5)
+                    if (Convert.ToInt32(oPropertyValues.SearchForProperty(100).TypedValue.GetValueAsLookup().DisplayID) == 5)
                     {
                         // Get the customer property value
-                        var customer = oPropVals
+                        var customer = oPropertyValues
                         .SearchForProperty(Configuration.ConvertingVBScriptToAVaultApplication.PDCustomer)
                         .TypedValue
                         .DisplayValue;
@@ -56,10 +57,10 @@ namespace CertificationTest
                         documentTitle = className + " - " + subject + " - " + customer;
                     }
                     // If the class valued is Supplier Agreement
-                    else if (Convert.ToInt32(oPropVals.SearchForProperty(100).TypedValue.GetValueAsLookup().DisplayID) == 6)
+                    else if (Convert.ToInt32(oPropertyValues.SearchForProperty(100).TypedValue.GetValueAsLookup().DisplayID) == 6)
                     {
                         // Get the supplier property value
-                        var supplier = oPropVals
+                        var supplier = oPropertyValues
                         .SearchForProperty(Configuration.ConvertingVBScriptToAVaultApplication.PDSupplier)
                         .TypedValue
                         .DisplayValue;
@@ -185,7 +186,7 @@ namespace CertificationTest
                                     foreach (Lookup role in roles)
                                     {
                                         // Add the person to the "Contract Manager" group
-                                        if (role.ItemGUID.Equals("F0D28476-F58D-440F-8E65-D3A58AA916C9"))
+                                        if (role.ItemGUID.Equals("{F0D28476-F58D-440F-8E65-D3A58AA916C9}"))
                                         {
                                             job.Vault.UserOperationsEx.AddMemberToUserGroup(
                                                 Configuration.UserGroupByRole.UGContractManagers,
@@ -193,7 +194,7 @@ namespace CertificationTest
                                         }
 
                                         // Add the person to the "Executive Management" group
-                                        if (role.ItemGUID.Equals("9A9A3642-6E0F-4817-BFFF-4A7A14F7C000"))
+                                        if (role.ItemGUID.Equals("{9A9A3642-6E0F-4817-BFFF-4A7A14F7C000}"))
                                         {
                                             job.Vault.UserOperationsEx.AddMemberToUserGroup(
                                                 Configuration.UserGroupByRole.UGExecutiveManagement,
@@ -204,7 +205,7 @@ namespace CertificationTest
                                 else if (roles.Count == 1) // If the person has one role assigned, continue
                                 {
                                     // If the role is "Contract Manager"
-                                    if (roles[1].ItemGUID.Equals("F0D28476-F58D-440F-8E65-D3A58AA916C9"))
+                                    if (roles[1].ItemGUID.Equals("{F0D28476-F58D-440F-8E65-D3A58AA916C9}"))
                                     {
                                         // Add the person to the "Contract Manager" group
                                         job.Vault.UserOperationsEx.AddMemberToUserGroup(
