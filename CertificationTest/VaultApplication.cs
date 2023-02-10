@@ -461,7 +461,7 @@ namespace CertificationTest
 
                     var oLookupContracts = oPropertyValues.SearchForPropertyEx(contractsPropertyDef, true).TypedValue.GetValueAsLookups();
 
-                    oLookupContracts.Remove(0);
+                    oLookupContracts.Remove(1);
 
                     // Remove the last document in the list of valid or expired contracts
                     var oObjVer = customer.Vault.ObjectOperations.GetLatestObjVerEx(customer.ObjID, true);
