@@ -454,7 +454,19 @@ namespace CertificationTest
                     oObjVer = customer.Vault.ObjectOperations.CheckOut(customer.ObjID).ObjVer; // Check-out the object
                     customer.Vault.ObjectPropertyOperations.SetProperty(oObjVer, oPropertyValue);
                     customer.Vault.ObjectOperations.CheckIn(oObjVer); // Check-in the object
-                }                
+                }
+                else
+                {
+                    oLookups.Remove(0);
+
+                    // Remove the last document in the list of valid or expired contracts
+                    var oObjVer = customer.Vault.ObjectOperations.GetLatestObjVerEx(customer.ObjID, true);
+                    oPropertyValue.PropertyDef = contractsPropertyDef;
+                    oPropertyValue.TypedValue.SetValueToMultiSelectLookup(oLookups);
+                    oObjVer = customer.Vault.ObjectOperations.CheckOut(customer.ObjID).ObjVer; // Check-out the object
+                    customer.Vault.ObjectPropertyOperations.SetProperty(oObjVer, oPropertyValue);
+                    customer.Vault.ObjectOperations.CheckIn(oObjVer); // Check-in the object
+                }
             }
         }  
 
