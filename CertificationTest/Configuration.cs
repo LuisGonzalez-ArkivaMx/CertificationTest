@@ -154,5 +154,10 @@ namespace CertificationTest
         [MFPropertyDef]
         [JsonConfEditor(HelpText = "Former Employee Property Definition", Label = "Former Employee Property", IsRequired = true)]
         public MFIdentifier PDFormerEmployee { get; set; }
+
+        [DataMember]
+        [MFPropertyDef]
+        [JsonConfEditor(HelpText = "M-Files User Property Definition", Label = "M-Files User Property", IsRequired = true)]
+        public MFIdentifier PDMFilesUser { get; set; }
     }
 }

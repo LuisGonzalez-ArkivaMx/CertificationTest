@@ -6,6 +6,7 @@ using MFiles.VAF.Core;
 using MFilesAPI;
 using MFiles.VAF.Common.ApplicationTaskQueue;
 using Newtonsoft.Json;
+using System.Xml.Linq;
 
 namespace CertificationTest
 {
@@ -127,7 +128,7 @@ namespace CertificationTest
                     SuccessorOfAContractOwnerTaskType,
                     // Directives allow you to pass serializable data to and from the task.
                     directive: new ObjVerExTaskDirective(env.ObjVerEx)
-                );
+                );                                
             }            
         }
 
@@ -295,6 +296,14 @@ namespace CertificationTest
                                 .TypedValue
                                 .GetValueAsLookup();
 
+                            var oSuccessorProperties = successor.ToObjVerEx(job.Vault).Properties;
+
+                            // Get M-Files User ID of successor
+                            var mfilesUserID = oSuccessorProperties
+                                .SearchForPropertyEx(Configuration.SuccessorOfAContractOwner.PDMFilesUser, true)
+                                .TypedValue
+                                .GetLookupID();
+
                             // Search all documents in which the person marked as former employee is a contract owner
                             var searchBuilder = new MFSearchBuilder(job.Vault);
                             searchBuilder.Deleted(false); // Don't search for deleted documents
@@ -309,26 +318,26 @@ namespace CertificationTest
                             var searchResults = searchBuilder.FindEx();
 
                             // Through loop one by one all the documents found to assign them to the person marked as successor
-                            foreach (var result in searchResults)
+                            foreach (var document in searchResults)
                             {
                                 try
                                 {
                                     // Add the successor in the "Contract Owner" property definition of the document
-                                    var oObjVer = job.Vault.ObjectOperations.GetLatestObjVerEx(result.ObjID, true);
+                                    var oObjVer = job.Vault.ObjectOperations.GetLatestObjVerEx(document.ObjID, true);
                                     oPropertyValue.PropertyDef = Configuration.SuccessorOfAContractOwner.PDContractOwner;
                                     oPropertyValue.TypedValue.SetValueToLookup(successor);
-                                    oObjVer = job.Vault.ObjectOperations.CheckOut(result.ObjID).ObjVer;
+                                    oObjVer = job.Vault.ObjectOperations.CheckOut(document.ObjID).ObjVer;
                                     job.Vault.ObjectPropertyOperations.SetProperty(oObjVer, oPropertyValue);
                                     job.Vault.ObjectOperations.CheckIn(oObjVer);
                                 }
                                 catch (Exception ex)
                                 {
-                                    // If there is an error situation, create an assignment to the Successor 
-                                    // with a link to the document where the error occurred
-                                    CreateAssignment(result, successor);
-
                                     // Send the message error to event log
                                     SysUtils.ReportErrorToEventLog("Error Message:  ", ex);
+
+                                    // If there is an error situation, create an assignment to the Successor 
+                                    // with a link to the document where the error occurred
+                                    CreateAssignment(document, mfilesUserID);                                                                        
                                 }
                             }
                         }
@@ -659,16 +668,19 @@ namespace CertificationTest
             return bValidate;
         }        
 
-        private void CreateAssignment(ObjVerEx document, Lookup successor)
+        private void CreateAssignment(ObjVerEx document, int mfilesUserID)
         {
             // Initialize variables and M-Files objects
             var oLookupsAssignedTo = new Lookups();
+            var oLookupAssignedTo = new Lookup();
             var oLookupsDocument = new Lookups();
             var oLookupDocument = new Lookup();
 
             // Add the successor in the lookups classes
-            oLookupsAssignedTo.Add(-1, successor);
+            oLookupAssignedTo.Item = mfilesUserID;
+            oLookupsAssignedTo.Add(-1, oLookupAssignedTo);
 
+            // Add the document where the error occurred
             oLookupDocument.Item = document.ID;
             oLookupsDocument.Add(-1, oLookupDocument);
 
@@ -686,14 +698,20 @@ namespace CertificationTest
             );
             builder.Add
             (
+                (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignmentDescription, 
+                MFDataType.MFDatatypeMultiLineText,
+                "Error in the assignment of the attached document." // Assignment description
+            );
+            builder.Add
+            (
                 (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignedTo,
                 MFDataType.MFDatatypeMultiSelectLookup,
                 oLookupsAssignedTo // Assigned To
             );
             builder.Add
             (
-                Configuration.SuccessorOfAContractOwner.PDDocument, 
-                MFDataType.MFDatatypeMultiSelectLookup, 
+                Configuration.SuccessorOfAContractOwner.PDDocument,
+                MFDataType.MFDatatypeMultiSelectLookup,
                 oLookupsDocument // Document
             );
 
@@ -701,7 +719,7 @@ namespace CertificationTest
             var assignmentObjectTypeId = (int)MFBuiltInObjectType.MFBuiltInObjectTypeAssignment;
 
             // Create the assignment object
-            var objectVersion = document.Vault.ObjectOperations.CreateNewObjectEx
+            document.Vault.ObjectOperations.CreateNewObjectEx
             (
                 assignmentObjectTypeId,
                 builder.Values,
