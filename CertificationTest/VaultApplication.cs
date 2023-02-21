@@ -687,44 +687,55 @@ namespace CertificationTest
             // Concatenate name or title
             var nameOrTitlePropVal = "Assignment: " + document.Title;
 
-            // Add the properties and define the class to create
-            var builder = new MFPropertyValuesBuilder(document.Vault);
-            builder.SetClass(MFBuiltInObjectClass.MFBuiltInObjectClassGenericAssignment); // Assignment Class
-            builder.Add
-            (
-                (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefNameOrTitle,
-                MFDataType.MFDatatypeText,
-                nameOrTitlePropVal // Name or title
-            );
-            builder.Add
-            (
-                (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignmentDescription, 
-                MFDataType.MFDatatypeMultiLineText,
-                "Error in the assignment of the attached document." // Assignment description
-            );
-            builder.Add
-            (
-                (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignedTo,
-                MFDataType.MFDatatypeMultiSelectLookup,
-                oLookupsAssignedTo // Assigned To
-            );
-            builder.Add
-            (
-                Configuration.SuccessorOfAContractOwner.PDDocument,
-                MFDataType.MFDatatypeMultiSelectLookup,
-                oLookupsDocument // Document
-            );
+            // Before creating the assignment, verify that there is not one previously created for the current document.
+            var searchBuilderAssignment = new MFSearchBuilder(document.Vault);
+            searchBuilderAssignment.Deleted(false);
+            searchBuilderAssignment.Class(MFBuiltInObjectClass.MFBuiltInObjectClassGenericAssignment);
+            searchBuilderAssignment.Property(Configuration.SuccessorOfAContractOwner.PDDocument, MFDataType.MFDatatypeMultiSelectLookup, oLookupsDocument);
 
-            // Define the object type
-            var assignmentObjectTypeId = (int)MFBuiltInObjectType.MFBuiltInObjectTypeAssignment;
+            var searchResultsAssignment = searchBuilderAssignment.FindEx();
 
-            // Create the assignment object
-            document.Vault.ObjectOperations.CreateNewObjectEx
-            (
-                assignmentObjectTypeId,
-                builder.Values,
-                CheckIn: true
-            );
+            if (searchResultsAssignment.Count == 0)
+            {
+                // Add the properties and define the class to create
+                var builder = new MFPropertyValuesBuilder(document.Vault);
+                builder.SetClass(MFBuiltInObjectClass.MFBuiltInObjectClassGenericAssignment); // Assignment Class
+                builder.Add
+                (
+                    (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefNameOrTitle,
+                    MFDataType.MFDatatypeText,
+                    nameOrTitlePropVal // Name or title
+                );
+                builder.Add
+                (
+                    (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignmentDescription,
+                    MFDataType.MFDatatypeMultiLineText,
+                    "Error in the assignment of the attached document." // Assignment description
+                );
+                builder.Add
+                (
+                    (int)MFBuiltInPropertyDef.MFBuiltInPropertyDefAssignedTo,
+                    MFDataType.MFDatatypeMultiSelectLookup,
+                    oLookupsAssignedTo // Assigned To
+                );
+                builder.Add
+                (
+                    Configuration.SuccessorOfAContractOwner.PDDocument,
+                    MFDataType.MFDatatypeMultiSelectLookup,
+                    oLookupsDocument // Document
+                );
+
+                // Define the object type
+                var assignmentObjectTypeId = (int)MFBuiltInObjectType.MFBuiltInObjectTypeAssignment;
+
+                // Create the assignment object
+                document.Vault.ObjectOperations.CreateNewObjectEx
+                (
+                    assignmentObjectTypeId,
+                    builder.Values,
+                    CheckIn: true
+                );
+            }            
         }
     }
 }
